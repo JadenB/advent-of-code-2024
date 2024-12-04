@@ -7,14 +7,15 @@ use std::{
 
 fn parse_all_muls(input: &str) -> i64 {
     let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
-    let mut result: i64 = 0;
-    for (_, [left, right]) in re.captures_iter(input).map(|c| c.extract()) {
-        if let (Ok(l), Ok(r)) = (left.parse::<i64>(), right.parse::<i64>()) {
-            result += l * r;
-        }
-    }
-
-    result
+    re.captures_iter(input)
+        .map(|c| {
+            let (_, [left, right]) = c.extract();
+            match (left.parse::<i64>(), right.parse::<i64>()) {
+                (Ok(l), Ok(r)) => l * r,
+                (_, _) => 0,
+            }
+        })
+        .sum()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -26,12 +27,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{result}");
 
     // Part 2
-    let mut result: i64 = 0;
-    for do_split in input.split("do()") {
-        // Between "do()"s, the first slice before a "don't()" will be enabled
-        let enabled_part = do_split.split("don't()").next();
-        result += enabled_part.map_or(0, parse_all_muls)
-    }
+    // Between "do()"s, the first slice before a "don't()" will be enabled
+    let result: i64 = input
+        .split("do()")
+        .map(|s| s.split("don't()").next().map_or(0, parse_all_muls))
+        .sum();
     println!("{result}");
 
     Ok(())
