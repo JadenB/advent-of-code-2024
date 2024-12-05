@@ -24,3 +24,5 @@ Cargo.lock
 #.idea/
 
 .DS_Store
+template_main.rs
+.vscode
