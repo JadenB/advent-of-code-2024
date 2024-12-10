@@ -6,11 +6,20 @@ enum Op {
     Concat,
 }
 
+fn concat(a: &i64, b: &i64) -> i64 {
+    let mut pow = 10;
+    while *b >= pow {
+        pow *= 10;
+    }
+    
+    a * pow + b
+}
+
 fn apply_op(op: &Op, a: &i64, b: &i64) -> i64 {
     match op {
         Op::Add => a + b,
         Op::Mult => a * b,
-        Op::Concat => (a.to_string() + &b.to_string()).parse().unwrap(),
+        Op::Concat => concat(a, b),
     }
 }
 
@@ -33,20 +42,28 @@ impl Equation {
     }
 }
 
-fn has_solution(eq: &Equation, ops: &[Op]) -> bool {
-    let Some(first) = eq.nums.first() else {
-        return true;
-    };
-    let mut stack: Vec<i64> = vec![*first];
-
-    for num in eq.nums.iter().skip(1) {
-        stack = stack
+fn has_solution_1(first: &i64, rest: &[i64], solution: &i64) -> bool {
+    if rest.is_empty() {
+        first == solution
+    } else if first > solution {
+        false
+    } else {
+        [Op::Add, Op::Mult]
             .iter()
-            .flat_map(|x| ops.iter().map(|op| apply_op(op, x, num)))
-            .collect();
+            .any(|op| has_solution_1(&apply_op(op, first, &rest[0]), &rest[1..], solution))
     }
+}
 
-    stack.contains(&eq.result)
+fn has_solution_2(first: &i64, rest: &[i64], solution: &i64) -> bool {
+    if rest.is_empty() {
+        first == solution
+    } else if first > solution {
+        false
+    } else {
+        [Op::Add, Op::Mult, Op::Concat]
+            .iter()
+            .any(|op| has_solution_2(&apply_op(op, first, &rest[0]), &rest[1..], solution))
+    }
 }
 
 fn main() {
@@ -55,14 +72,20 @@ fn main() {
 
     let result: i64 = eqs
         .iter()
-        .filter(|e| has_solution(e, &[Op::Add, Op::Mult]))
+        .filter(|e| match e.nums.split_first() {
+            Some((first, rest)) => has_solution_1(first, rest, &e.result),
+            None => false,
+        })
         .map(|e| e.result)
         .sum();
     println!("{result}");
 
     let result: i64 = eqs
         .iter()
-        .filter(|e| has_solution(e, &[Op::Add, Op::Mult, Op::Concat]))
+        .filter(|e| match e.nums.split_first() {
+            Some((first, rest)) => has_solution_2(first, rest, &e.result),
+            None => false,
+        })
         .map(|e| e.result)
         .sum();
     println!("{result}");
